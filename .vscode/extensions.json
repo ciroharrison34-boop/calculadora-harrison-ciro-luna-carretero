@@ -1,0 +1,6 @@
+{
+  "recommendations": [
+    "ritwickdey.LiveServer",
+    "dbaeumer.vscode-eslint"
+  ]
+}

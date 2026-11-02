@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Calculadora web de métodos numéricos para encontrar raíces: Bairstow y Ridders." />
+  <title>Calculadora de Raíces — Métodos Numéricos (Bairstow y Ridders)</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- Librerías externas por CDN -->
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.min.js"></script>
+  <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-inner">
+      <div>
+        <h1>📐 Calculadora de Raíces</h1>
+        <p class="subtitle">Métodos numéricos: Bairstow (polinomios) y Ridders (f(x) general)</p>
+      </div>
+      <button id="btn-tema" class="btn btn-ghost" type="button" aria-label="Cambiar tema">🌙 Oscuro</button>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Métodos numéricos">
+    <button class="tab active" id="tab-btn-bairstow" role="tab" aria-selected="true" aria-controls="panel-bairstow" data-tab="bairstow">Bairstow</button>
+    <button class="tab" id="tab-btn-ridders" role="tab" aria-selected="false" aria-controls="panel-ridders" data-tab="ridders">Ridders</button>
+  </nav>
+
+  <main class="container">
+
+    <!-- ================== PESTAÑA BAIRSTOW ================== -->
+    <section id="panel-bairstow" class="panel active" role="tabpanel" aria-labelledby="tab-btn-bairstow">
+      <div class="grid">
+        <div class="card">
+          <h2>Datos de entrada</h2>
+          <form id="form-bairstow" novalidate>
+            <div class="field">
+              <label for="b-coef">Coeficientes del polinomio (de mayor a menor grado)</label>
+              <input type="text" id="b-coef" placeholder="1, -3.5, 2.75, 2.125, -3.875, 1.25" autocomplete="off" />
+              <small>Ejemplo: <code>x⁵ - 3.5x⁴ + 2.75x³ + 2.125x² - 3.875x + 1.25</code> → <code>1, -3.5, 2.75, 2.125, -3.875, 1.25</code></small>
+            </div>
+            <div class="row">
+              <div class="field">
+                <label for="b-r0">r₀</label>
+                <input type="text" id="b-r0" value="-1" autocomplete="off" />
+              </div>
+              <div class="field">
+                <label for="b-s0">s₀</label>
+                <input type="text" id="b-s0" value="-1" autocomplete="off" />
+              </div>
+            </div>
+            <div class="row">
+              <div class="field">
+                <label for="b-tol">Tolerancia de error (%)</label>
+                <input type="number" id="b-tol" value="0.0001" min="0" step="any" />
+              </div>
+              <div class="field">
+                <label for="b-iters">Máx. iteraciones</label>
+                <input type="number" id="b-iters" value="100" min="1" max="10000" step="1" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="b-verdaderas">Raíces verdaderas (opcional, separadas por coma)</label>
+              <input type="text" id="b-verdaderas" placeholder="0.5, -1, 2, 1+0.5i, 1-0.5i" autocomplete="off" />
+              <small>Acepta complejas como <code>1+1i</code>. Si se omiten, no se calculan Er ni εt.</small>
+            </div>
+            <div class="actions">
+              <button type="submit" class="btn btn-primary">Calcular</button>
+              <button type="button" class="btn btn-secondary" id="b-ejemplo">Cargar ejemplo</button>
+              <button type="button" class="btn btn-ghost" id="b-limpiar">Limpiar</button>
+              <button type="button" class="btn btn-ghost" id="b-csv" disabled>⬇ Exportar CSV</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2>Fórmulas utilizadas</h2>
+          <div class="formulas">
+            <p>Factor cuadrático: <code>x² - r·x - s</code></p>
+            <p>División sintética: <code>bᵢ = aᵢ + r·bᵢ₋₁ + s·bᵢ₋₂</code> &nbsp;|&nbsp; <code>cᵢ = bᵢ + r·cᵢ₋₁ + s·cᵢ₋₂</code></p>
+            <p>Sistema 2×2 para los incrementos (con <code>cₙ = cₙ₊₁ = 0</code>):</p>
+            <pre class="ecuacion">c(n-2)·Δr + c(n-3)·Δs = -b(n-1)
+c(n-1)·Δr + c(n-2)·Δs = -b(n)</pre>
+            <p>Raíces del factor: <code>x = (r ± √(r² + 4s)) / 2</code></p>
+            <p>Errores: <code>εa = |(xₙ₊₁ - xₙ) / xₙ₊₁| × 100 %</code> &nbsp;|&nbsp; <code>Et = x_verdadero - x_aproximado</code> &nbsp;|&nbsp; <code>εt = |Et / x_verdadero| × 100 %</code></p>
+          </div>
+        </div>
+      </div>
+
+      <div id="b-error" class="msg-error" hidden></div>
+      <div id="b-avisos" class="msg-aviso" hidden></div>
+
+      <div id="b-resultado" hidden>
+        <div class="card">
+          <h2>Procedimiento paso a paso — 1ª iteración del primer factor</h2>
+          <details class="pasos" open>
+            <summary>Ver desarrollo didáctico</summary>
+            <div id="b-pasos" class="pasos-body"></div>
+          </details>
+        </div>
+
+        <div class="card">
+          <h2>Raíces encontradas</h2>
+          <ul id="b-raices" class="raices-list"></ul>
+        </div>
+
+        <div class="card" id="b-card-tablas" hidden>
+          <h2>Iteraciones por factor</h2>
+          <div id="b-tablas"></div>
+        </div>
+
+        <div class="card" id="b-card-errores" hidden>
+          <h2>Errores por raíz (vs. raíces verdaderas)</h2>
+          <div id="b-errores"></div>
+        </div>
+
+        <div class="card">
+          <h2>Gráficas</h2>
+          <div id="plot-b-pol" class="plot"></div>
+          <div id="plot-b-complex" class="plot"></div>
+          <div id="plot-b-error" class="plot"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================== PESTAÑA RID DERS ================== -->
+    <section id="panel-ridders" class="panel" role="tabpanel" aria-labelledby="tab-btn-ridders">
+      <div class="grid">
+        <div class="card">
+          <h2>Datos de entrada</h2>
+          <form id="form-ridders" novalidate>
+            <div class="field">
+              <label for="r-func">f(x)</label>
+              <input type="text" id="r-func" placeholder="x^3 - x - 2" autocomplete="off" />
+              <small>Usa <code>^</code> para potencias. Acepta <code>sin, cos, tan, exp, log, sqrt, abs, pi, e</code>.</small>
+            </div>
+            <div class="row">
+              <div class="field">
+                <label for="r-xl">Límite inferior xl</label>
+                <input type="text" id="r-xl" value="1" autocomplete="off" />
+              </div>
+              <div class="field">
+                <label for="r-xu">Límite superior xu</label>
+                <input type="text" id="r-xu" value="2" autocomplete="off" />
+              </div>
+            </div>
+            <div class="row">
+              <div class="field">
+                <label for="r-tol">Tolerancia (%)</label>
+                <input type="number" id="r-tol" value="0.0001" min="0" step="any" />
+              </div>
+              <div class="field">
+                <label for="r-iters">Máx. iteraciones</label>
+                <input type="number" id="r-iters" value="100" min="1" max="10000" step="1" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="r-verdadera">Valor verdadero de la raíz (opcional)</label>
+              <input type="text" id="r-verdadera" placeholder="Vacío = referencia por bisección de alta precisión" autocomplete="off" />
+            </div>
+            <div class="actions">
+              <button type="submit" class="btn btn-primary">Calcular</button>
+              <button type="button" class="btn btn-secondary" id="r-ejemplo">Cargar ejemplo</button>
+              <button type="button" class="btn btn-ghost" id="r-limpiar">Limpiar</button>
+              <button type="button" class="btn btn-ghost" id="r-csv" disabled>⬇ Exportar CSV</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2>Fórmulas utilizadas</h2>
+          <div class="formulas">
+            <p><code>xm = (xl + xu) / 2</code></p>
+            <p><code>x4 = xm + (xm - xl) · sign(f(xl) - f(xu)) · f(xm) / √( f(xm)² - f(xl)·f(xu) )</code></p>
+            <p>Se actualiza el intervalo <b>conservando siempre el cambio de signo</b>.</p>
+            <p>Errores: <code>εa = |(x₄ - x₄_anterior) / x₄| × 100 %</code> &nbsp;|&nbsp; <code>Et = x_verdadero - x_aproximado</code> &nbsp;|&nbsp; <code>εt = |Et / x_verdadero| × 100 %</code></p>
+          </div>
+        </div>
+      </div>
+
+      <div id="r-error" class="msg-error" hidden></div>
+      <div id="r-avisos" class="msg-aviso" hidden></div>
+
+      <div id="r-resultado" hidden>
+        <div class="card">
+          <h2>Resumen</h2>
+          <div id="r-resumen" class="resumen"></div>
+        </div>
+
+        <div class="card">
+          <h2>Procedimiento paso a paso — 1ª iteración</h2>
+          <details class="pasos" open>
+            <summary>Ver desarrollo didáctico</summary>
+            <div id="r-pasos" class="pasos-body"></div>
+          </details>
+        </div>
+
+        <div class="card">
+          <h2>Tabla de iteraciones</h2>
+          <div id="r-tabla"></div>
+        </div>
+
+        <div class="card">
+          <h2>Gráficas</h2>
+          <div id="plot-r-func" class="plot"></div>
+          <div id="plot-r-error" class="plot"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>Calculadora 100% estática · Bairstow y Ridders · Sin backend · Compatible con GitHub Pages, Netlify, Vercel y Cloudflare Pages.</p>
+  </footer>
+
+  <script src="js/bairstow.js"></script>
+  <script src="js/ridders.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

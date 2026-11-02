@@ -1,0 +1,298 @@
+/* ============================================================
+   style.css — Calculadora de Raíces (Bairstow y Ridders)
+   Tema claro/oscuro con variables CSS + diseño responsivo
+   ============================================================ */
+
+:root,
+[data-theme="light"] {
+  --bg: #f4f6fb;
+  --bg-card: #ffffff;
+  --bg-soft: #eef1f8;
+  --text: #1d2433;
+  --text-muted: #5b6475;
+  --border: #dfe4ee;
+  --primary: #3b5bdb;
+  --primary-hover: #2f4bc4;
+  --primary-contrast: #ffffff;
+  --secondary: #e7ebf6;
+  --accent: #0ca678;
+  --error: #e03131;
+  --error-bg: #fff0f0;
+  --warning: #b45309;
+  --warning-bg: #fff8ec;
+  --shadow: 0 4px 18px rgba(20, 30, 60, 0.08);
+  --radius: 14px;
+  --plot-bg: #ffffff;
+  --grid: #e6e9f0;
+}
+
+[data-theme="dark"] {
+  --bg: #0f1420;
+  --bg-card: #171d2b;
+  --bg-soft: #1e2637;
+  --text: #e7ecf5;
+  --text-muted: #9aa5b8;
+  --border: #2a3346;
+  --primary: #5c7cfa;
+  --primary-hover: #7591ff;
+  --primary-contrast: #ffffff;
+  --secondary: #222b3e;
+  --accent: #38d9a9;
+  --error: #ff6b6b;
+  --error-bg: #2a1a1d;
+  --warning: #ffc078;
+  --warning-bg: #2a2318;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+  --plot-bg: #171d2b;
+  --grid: #2a3346;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.55;
+  transition: background 0.25s ease, color 0.25s ease;
+}
+
+code {
+  background: var(--bg-soft);
+  padding: 0.1rem 0.35rem;
+  border-radius: 6px;
+  font-size: 0.92em;
+}
+
+pre.ecuacion {
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  overflow-x: auto;
+  font-size: 0.9em;
+}
+
+/* ---------- Header ---------- */
+.app-header {
+  background: linear-gradient(120deg, var(--primary), #7048e8 60%, #e64980);
+  color: #fff;
+  padding: 1.1rem 1rem;
+}
+.header-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.app-header h1 { margin: 0; font-size: 1.5rem; }
+.subtitle { margin: 0.2rem 0 0; opacity: 0.92; font-size: 0.92rem; }
+.app-header .btn-ghost {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.6);
+}
+.app-header .btn-ghost:hover { background: rgba(255, 255, 255, 0.15); }
+
+/* ---------- Tabs ---------- */
+.tabs {
+  max-width: 1180px;
+  margin: 1rem auto 0;
+  padding: 0 1rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.tab {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  padding: 0.6rem 1.4rem;
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.tab:hover { color: var(--text); border-color: var(--primary); }
+.tab.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-contrast);
+  box-shadow: var(--shadow);
+}
+
+/* ---------- Paneles ---------- */
+.container { max-width: 1180px; margin: 0 auto; padding: 1rem; }
+.panel { display: none; animation: fade 0.3s ease; }
+.panel.active { display: block; }
+.panel[hidden] { display: none !important; }
+@keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* ---------- Cards ---------- */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.1rem 1.2rem;
+  margin-top: 1rem;
+}
+.card h2 {
+  margin: 0 0 0.8rem;
+  font-size: 1.05rem;
+  color: var(--primary);
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 0.4rem;
+}
+.grid {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 0 1rem;
+  align-items: start;
+}
+@media (max-width: 880px) { .grid { grid-template-columns: 1fr; } }
+
+/* ---------- Formularios ---------- */
+.field { margin-bottom: 0.85rem; flex: 1; }
+.field label { display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.9rem; }
+.field input {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-soft);
+  color: var(--text);
+  font-size: 0.95rem;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+.field input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 25%, transparent);
+}
+.field input.invalid { border-color: var(--error); }
+.field small { display: block; color: var(--text-muted); margin-top: 0.25rem; font-size: 0.8rem; }
+.row { display: flex; gap: 0.8rem; }
+.formulas p { margin: 0.35rem 0; font-size: 0.9rem; }
+
+.actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.4rem; }
+
+/* ---------- Botones ---------- */
+.btn {
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 0.55rem 1.05rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-primary { background: var(--primary); color: var(--primary-contrast); }
+.btn-primary:hover:not(:disabled) { background: var(--primary-hover); transform: translateY(-1px); }
+.btn-secondary { background: var(--accent); color: #fff; }
+.btn-secondary:hover:not(:disabled) { filter: brightness(1.08); }
+.btn-ghost { background: transparent; border-color: var(--border); color: var(--text); }
+.btn-ghost:hover:not(:disabled) { background: var(--bg-soft); }
+
+/* ---------- Mensajes ---------- */
+.msg-error, .msg-aviso {
+  border-radius: var(--radius);
+  padding: 0.8rem 1rem;
+  margin-top: 1rem;
+  font-size: 0.93rem;
+  border: 1px solid;
+}
+.msg-error { background: var(--error-bg); border-color: var(--error); color: var(--error); font-weight: 600; }
+.msg-aviso { background: var(--warning-bg); border-color: var(--warning); color: var(--warning); }
+
+/* ---------- Tablas ---------- */
+.table-wrap { overflow-x: auto; margin-top: 0.4rem; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  min-width: 520px;
+}
+th, td { border: 1px solid var(--border); padding: 0.4rem 0.5rem; text-align: right; white-space: nowrap; }
+th { background: var(--bg-soft); color: var(--text); position: sticky; top: 0; }
+td:first-child, th:first-child { text-align: center; }
+tbody tr:nth-child(even) { background: color-mix(in srgb, var(--bg-soft) 55%, transparent); }
+h3.subtitulo { margin: 1.2rem 0 0.3rem; font-size: 0.98rem; color: var(--accent); }
+
+/* ---------- Raíces y errores ---------- */
+.raices-list { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.raices-list li {
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.35rem 0.7rem;
+  font-family: "Cascadia Code", Consolas, monospace;
+  font-size: 0.9rem;
+}
+.raices-list li .badge {
+  font-size: 0.7rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  margin-left: 0.4rem;
+  color: #fff;
+}
+.badge.real { background: var(--primary); }
+.badge.compleja { background: #e64980; }
+.resumen { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.resumen .chip {
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.9rem;
+}
+.resumen .chip b { color: var(--primary); }
+
+/* ---------- Pasos didácticos ---------- */
+details.pasos {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.5rem 0.8rem;
+  background: var(--bg-soft);
+}
+details.pasos summary { cursor: pointer; font-weight: 600; color: var(--primary); }
+.pasos-body { margin-top: 0.6rem; font-size: 0.9rem; }
+.pasos-body ol { padding-left: 1.2rem; }
+.pasos-body li { margin-bottom: 0.3rem; }
+.pasos-body .paso {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+  margin-bottom: 0.5rem;
+  overflow-x: auto;
+}
+
+/* ---------- Gráficas ---------- */
+.plot { width: 100%; min-height: 340px; margin-bottom: 0.8rem; }
+
+/* ---------- Footer ---------- */
+.app-footer {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  padding: 1.4rem 1rem 2rem;
+}
+
+/* ---------- Móvil ---------- */
+@media (max-width: 560px) {
+  .app-header h1 { font-size: 1.2rem; }
+  .row { flex-direction: column; gap: 0; }
+  .btn { flex: 1 1 auto; }
+  .card { padding: 0.9rem; }
+  .plot { min-height: 280px; }
+}

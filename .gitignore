@@ -1,0 +1,21 @@
+# Dependencias
+node_modules/
+
+# Variables de entorno / secretos (nunca subir a GitHub)
+.env
+.env.*
+*.env
+
+# Salidas de build / OS
+dist/
+build/
+.DS_Store
+Thumbs.db
+
+# Editores
+*.swp
+*.log
+
+# Carpetas de VS Code (opcional: se puede versionar; aquí solo ignoramos lo privado)
+.vscode/*
+!.vscode/extensions.json
