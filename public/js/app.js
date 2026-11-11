@@ -1021,7 +1021,7 @@
   }
 
   function limpiarGuardado(idBox) {
-    if (backendOk === false) { avisoBackendNoDisponible(idBox); return; }
+    if (backendOk === false && !modoLocal) { avisoBackendNoDisponible(idBox); return; }
     var box = $(idBox);
     box.hidden = true;
     box.textContent = '';
