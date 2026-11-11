@@ -9,6 +9,8 @@
   <!-- Librerías externas por CDN -->
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.min.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
   <header class="app-header">
@@ -21,9 +23,10 @@
     </div>
   </header>
 
-  <nav class="tabs" role="tablist" aria-label="Métodos numéricos">
+  <nav class="tabs" role="tablist" aria-label="Secciones de la calculadora">
     <button class="tab active" id="tab-btn-bairstow" role="tab" aria-selected="true" aria-controls="panel-bairstow" data-tab="bairstow">Bairstow</button>
     <button class="tab" id="tab-btn-ridders" role="tab" aria-selected="false" aria-controls="panel-ridders" data-tab="ridders">Ridders</button>
+    <button class="tab" id="tab-btn-historial" role="tab" aria-selected="false" aria-controls="panel-historial" data-tab="historial">📒 Historial</button>
   </nav>
 
   <main class="container">
@@ -64,12 +67,15 @@
               <input type="text" id="b-verdaderas" placeholder="0.5, -1, 2, 1+0.5i, 1-0.5i" autocomplete="off" />
               <small>Acepta complejas como <code>1+1i</code>. Si se omiten, no se calculan Er ni εt.</small>
             </div>
+            <div class="teclado" data-form="form-bairstow"></div>
             <div class="actions">
               <button type="submit" class="btn btn-primary">Calcular</button>
               <button type="button" class="btn btn-secondary" id="b-ejemplo">Cargar ejemplo</button>
               <button type="button" class="btn btn-ghost" id="b-limpiar">Limpiar</button>
-              <button type="button" class="btn btn-ghost" id="b-csv" disabled>⬇ Exportar CSV</button>
+              <button type="button" class="btn btn-save" id="b-guardar" disabled>💾 Guardar cálculo</button>
+              <button type="button" class="btn btn-secondary" id="b-pdf" disabled>📄 Descargar PDF</button>
             </div>
+            <div id="b-guardado" class="msg-guardado" hidden></div>
           </form>
         </div>
 
@@ -92,7 +98,7 @@ c(n-1)·Δr + c(n-2)·Δs = -b(n)</pre>
 
       <div id="b-resultado" hidden>
         <div class="card">
-          <h2>Procedimiento paso a paso — 1ª iteración del primer factor</h2>
+          <h2>Procedimiento paso a paso — todas las iteraciones</h2>
           <details class="pasos" open>
             <summary>Ver desarrollo didáctico</summary>
             <div id="b-pasos" class="pasos-body"></div>
@@ -116,9 +122,8 @@ c(n-1)·Δr + c(n-2)·Δs = -b(n)</pre>
 
         <div class="card">
           <h2>Gráficas</h2>
+          <div id="plot-b-cartesiano" class="plot plot-alta"></div>
           <div id="plot-b-pol" class="plot"></div>
-          <div id="plot-b-complex" class="plot"></div>
-          <div id="plot-b-error" class="plot"></div>
         </div>
       </div>
     </section>
@@ -158,12 +163,15 @@ c(n-1)·Δr + c(n-2)·Δs = -b(n)</pre>
               <label for="r-verdadera">Valor verdadero de la raíz (opcional)</label>
               <input type="text" id="r-verdadera" placeholder="Vacío = referencia por bisección de alta precisión" autocomplete="off" />
             </div>
+            <div class="teclado" data-form="form-ridders"></div>
             <div class="actions">
               <button type="submit" class="btn btn-primary">Calcular</button>
               <button type="button" class="btn btn-secondary" id="r-ejemplo">Cargar ejemplo</button>
               <button type="button" class="btn btn-ghost" id="r-limpiar">Limpiar</button>
-              <button type="button" class="btn btn-ghost" id="r-csv" disabled>⬇ Exportar CSV</button>
+              <button type="button" class="btn btn-save" id="r-guardar" disabled>💾 Guardar cálculo</button>
+              <button type="button" class="btn btn-secondary" id="r-pdf" disabled>📄 Descargar PDF</button>
             </div>
+            <div id="r-guardado" class="msg-guardado" hidden></div>
           </form>
         </div>
 
@@ -188,7 +196,7 @@ c(n-1)·Δr + c(n-2)·Δs = -b(n)</pre>
         </div>
 
         <div class="card">
-          <h2>Procedimiento paso a paso — 1ª iteración</h2>
+          <h2>Procedimiento paso a paso — todas las iteraciones</h2>
           <details class="pasos" open>
             <summary>Ver desarrollo didáctico</summary>
             <div id="r-pasos" class="pasos-body"></div>
@@ -203,18 +211,32 @@ c(n-1)·Δr + c(n-2)·Δs = -b(n)</pre>
         <div class="card">
           <h2>Gráficas</h2>
           <div id="plot-r-func" class="plot"></div>
-          <div id="plot-r-error" class="plot"></div>
         </div>
+      </div>
+    </section>
+    <!-- ================== PESTAÑA HISTORIAL ================== -->
+    <section id="panel-historial" class="panel" role="tabpanel" aria-labelledby="tab-btn-historial">
+      <div class="card">
+        <h2>Historial de cálculos guardados</h2>
+        <p class="texto-suave">Últimos 50 cálculos guardados en la base de datos. Con <b>Recargar</b> vuelves a llenar el formulario con esos datos; con <b>Borrar</b> los eliminas. Con <b>Descargar PDF</b> obtienes un reporte con todo el historial.</p>
+        <div class="actions">
+          <button type="button" class="btn btn-primary" id="h-actualizar">🔄 Actualizar</button>
+          <button type="button" class="btn btn-save" id="h-pdf" disabled>📄 Descargar PDF</button>
+        </div>
+        <div id="h-error" class="msg-error" hidden></div>
+        <div id="h-aviso" class="msg-aviso" hidden></div>
+        <div id="h-lista"></div>
       </div>
     </section>
   </main>
 
   <footer class="app-footer">
-    <p>Calculadora 100% estática · Bairstow y Ridders · Sin backend · Compatible con GitHub Pages, Netlify, Vercel y Cloudflare Pages.</p>
+    <p>Calculadora de métodos numéricos · Bairstow y Ridders · Frontend HTML/CSS/JS servido por Express + API REST con MySQL para el historial.</p>
   </footer>
 
   <script src="js/bairstow.js"></script>
   <script src="js/ridders.js"></script>
+  <script src="js/teclado.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

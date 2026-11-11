@@ -126,6 +126,7 @@
         // Última iteración válida: se marca como no convergido.
         iteraciones.push({
           iter: k, r: r, s: s, dr: NaN, ds: NaN, er: NaN, es: NaN,
+          rAnt: r, sAnt: s, b: p.b.slice(), c: p.c.slice(), det: p.det, singular: true,
         });
         break;
       }
@@ -138,6 +139,7 @@
 
       iteraciones.push({
         iter: k, r: rNuevo, s: sNuevo, dr: p.dr, ds: p.ds, er: er, es: es,
+        rAnt: r, sAnt: s, b: p.b.slice(), c: p.c.slice(), det: p.det,
       });
       if (!primerPaso) {
         primerPaso = {

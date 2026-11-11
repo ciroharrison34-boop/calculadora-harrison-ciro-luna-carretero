@@ -1,11 +1,10 @@
 {
   "name": "calculadora-metodos-numericos",
-  "version": "1.0.0",
-  "description": "Calculadora web de métodos numéricos para encontrar raíces: Bairstow (polinomios) y Ridders (f(x) general). Aplicación 100% estática, sin build step.",
-  "main": "index.html",
+  "version": "2.0.0",
+  "description": "Calculadora web de métodos numéricos para encontrar raíces: Bairstow (polinomios) y Ridders (f(x) general). Frontend HTML/CSS/JS puro servido por Express + API REST con MySQL para el historial de cálculos.",
+  "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "serve": "node server.js"
+    "start": "node server.js"
   },
   "keywords": [
     "metodos-numericos",
@@ -13,11 +12,15 @@
     "ridders",
     "raices",
     "calculadora",
-    "estatico"
+    "express",
+    "mysql"
   ],
   "author": "",
   "license": "MIT",
   "type": "commonjs",
-  "dependencies": {},
+  "dependencies": {
+    "express": "^5.3.0",
+    "mysql2": "^3.24.6"
+  },
   "devDependencies": {}
 }

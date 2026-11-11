@@ -1,0 +1,27 @@
+CALCULADORA DE RAICES (Bairstow y Ridders) - Como usarla en otro PC
+====================================================================
+
+QUE NECESITA EL OTRO PC
+  1. Node.js (version LTS)  ->  https://nodejs.org
+  2. WAMP (o XAMPP / MySQL) encendido, SOLO si quieres guardar el historial.
+     Sin MySQL la calculadora funciona igual (calculos, paso a paso,
+     graficas y PDF), solo que no guarda el historial.
+  3. Conexion a internet: las graficas, el lector de funciones y el PDF
+     usan librerias que se cargan de internet.
+
+PASOS
+  1. Descomprime el ZIP en cualquier carpeta (por ejemplo el Escritorio).
+  2. Si vas a usar el historial, enciende WAMP (icono verde).
+  3. Haz doble clic en  INICIAR.bat
+     - Se abre el navegador en http://localhost:5173
+     - La base de datos "calculadora" y su tabla se crean solas.
+  4. Deja abierta la ventana negra mientras uses la calculadora.
+     Para apagarla, cierra esa ventana.
+
+SI MYSQL TIENE CONTRASENA
+  Abre el archivo .env con el Bloc de notas y escribe la contrasena en
+  DB_PASSWORD=  (por defecto WAMP usa root sin contrasena).
+
+SI EL PUERTO 5173 ESTA OCUPADO
+  Cambia PORT=5173 en el archivo .env por otro numero (por ejemplo 3000)
+  y abre http://localhost:3000

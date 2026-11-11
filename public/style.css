@@ -24,6 +24,7 @@
   --radius: 14px;
   --plot-bg: #ffffff;
   --grid: #e6e9f0;
+  --key-depth: #c5ccdb;
 }
 
 [data-theme="dark"] {
@@ -45,6 +46,7 @@
   --shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
   --plot-bg: #171d2b;
   --grid: #2a3346;
+  --key-depth: #0a0e17;
 }
 
 * { box-sizing: border-box; }
@@ -133,6 +135,7 @@ pre.ecuacion {
 .panel { display: none; animation: fade 0.3s ease; }
 .panel.active { display: block; }
 .panel[hidden] { display: none !important; }
+[hidden] { display: none !important; }
 @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
 /* ---------- Cards ---------- */
@@ -151,13 +154,86 @@ pre.ecuacion {
   border-bottom: 2px solid var(--border);
   padding-bottom: 0.4rem;
 }
+/* Datos de entrada arriba y "Fórmulas utilizadas" debajo (una sola columna). */
 .grid {
   display: grid;
-  grid-template-columns: 1.25fr 1fr;
-  gap: 0 1rem;
-  align-items: start;
+  grid-template-columns: 1fr;
+  gap: 0;
 }
-@media (max-width: 880px) { .grid { grid-template-columns: 1fr; } }
+
+/* ---------- Teclado de calculadora ---------- */
+.teclado {
+  margin: 0.4rem 0 0.9rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-soft);
+}
+.teclado-cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.teclado-cabecera b { color: var(--primary); }
+.teclado-toggle {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+  padding: 0.2rem 0.3rem;
+}
+.teclado-rejilla {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.4rem;
+  max-width: 520px;
+}
+.teclado-rejilla[hidden] { display: none; }
+.tecla {
+  appearance: none;
+  min-height: 2.6rem;
+  min-width: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-card);
+  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  position: relative;
+  /* "Grosor" de la tecla: sombra sólida inferior que desaparece al hundirse */
+  box-shadow: 0 4px 0 var(--key-depth), 0 5px 8px rgba(0, 0, 0, 0.12);
+  transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.12s ease, filter 0.12s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.tecla:hover { background: var(--secondary); }
+.tecla:active,
+.tecla.presionada {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 var(--key-depth), inset 0 2px 5px rgba(0, 0, 0, 0.25),
+              0 0 0 3px color-mix(in srgb, var(--primary) 45%, transparent);
+  background: color-mix(in srgb, var(--primary) 22%, var(--bg-card));
+  filter: brightness(0.96);
+}
+.tecla:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.tecla-fn { font-size: 0.9rem; color: var(--primary); }
+.tecla-op { color: var(--accent); font-size: 1.15rem; }
+.tecla-var { font-style: italic; color: var(--primary); }
+.tecla-accion { background: var(--secondary); }
+.tecla-peligro { color: var(--error); }
+.field input.teclado-destino {
+  border-color: var(--primary);
+}
 
 /* ---------- Formularios ---------- */
 .field { margin-bottom: 0.85rem; flex: 1; }
@@ -193,9 +269,22 @@ pre.ecuacion {
   font-size: 0.92rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  box-shadow: 0 3px 0 var(--key-depth), 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.15s ease, filter 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
 }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn:active:not(:disabled),
+.btn.presionada:not(:disabled) {
+  transform: translateY(3px) !important;
+  box-shadow: 0 0 0 var(--key-depth), inset 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+  filter: brightness(0.88);
+}
+.tab:active, .tab.presionada,
+.teclado-toggle:active, .teclado-toggle.presionada {
+  transform: scale(0.94);
+  filter: brightness(0.9);
+}
 .btn-primary { background: var(--primary); color: var(--primary-contrast); }
 .btn-primary:hover:not(:disabled) { background: var(--primary-hover); transform: translateY(-1px); }
 .btn-secondary { background: var(--accent); color: #fff; }
@@ -213,6 +302,76 @@ pre.ecuacion {
 }
 .msg-error { background: var(--error-bg); border-color: var(--error); color: var(--error); font-weight: 600; }
 .msg-aviso { background: var(--warning-bg); border-color: var(--warning); color: var(--warning); }
+
+/* ---------- Guardar cálculo (estado) ---------- */
+.btn-save { background: #7048e8; color: #fff; }
+.btn-save:hover:not(:disabled) { background: #6741d9; transform: translateY(-1px); }
+.msg-guardado {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-soft);
+  color: var(--text);
+  padding: 0.5rem 0.8rem;
+  margin-top: 0.6rem;
+  font-size: 0.88rem;
+}
+.msg-guardado.ok {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  font-weight: 600;
+}
+.msg-guardado.fallo {
+  border-color: var(--warning);
+  background: var(--warning-bg);
+  color: var(--warning);
+  font-weight: 600;
+}
+.texto-suave { color: var(--text-muted); font-size: 0.9rem; margin-top: 0; }
+
+/* ---------- Historial ---------- */
+.hist-lista { display: flex; flex-direction: column; gap: 0.7rem; margin-top: 0.9rem; }
+.hist-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-soft);
+  padding: 0.7rem 0.9rem;
+}
+.hist-main { flex: 1 1 320px; min-width: 0; }
+.hist-titulo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.hist-meta { color: var(--text-muted); font-size: 0.8rem; }
+.hist-resumen {
+  font-family: "Cascadia Code", Consolas, monospace;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+  word-break: break-word;
+  white-space: normal;
+}
+.hist-acciones { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.badge-metodo {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--primary);
+}
+.badge-metodo.ridders { background: var(--accent); }
+.hist-vacio { text-align: center; color: var(--text-muted); padding: 1.2rem 0; }
 
 /* ---------- Tablas ---------- */
 .table-wrap { overflow-x: auto; margin-top: 0.4rem; }
@@ -279,6 +438,7 @@ details.pasos summary { cursor: pointer; font-weight: 600; color: var(--primary)
 
 /* ---------- Gráficas ---------- */
 .plot { width: 100%; min-height: 340px; margin-bottom: 0.8rem; }
+.plot.plot-alta { min-height: 480px; }
 
 /* ---------- Footer ---------- */
 .app-footer {
@@ -294,5 +454,29 @@ details.pasos summary { cursor: pointer; font-weight: 600; color: var(--primary)
   .row { flex-direction: column; gap: 0; }
   .btn { flex: 1 1 auto; }
   .card { padding: 0.9rem; }
+  .teclado { padding: 0.5rem; }
+  .teclado-rejilla { gap: 0.3rem; }
   .plot { min-height: 280px; }
 }
+
+/* Bloques de pasos por iteración */
+details.paso-grupo {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-card);
+  padding: 0.35rem 0.7rem;
+  margin-bottom: 0.5rem;
+}
+details.paso-grupo > summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--accent);
+  padding: 0.15rem 0;
+}
+details.paso-grupo ol { margin: 0.4rem 0 0.2rem; }
+details.paso-grupo .paso {
+  background: var(--bg-soft);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.85rem;
+}
+details.paso-grupo .paso b { font-family: inherit; }
