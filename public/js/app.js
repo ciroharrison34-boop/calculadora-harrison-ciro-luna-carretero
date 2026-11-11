@@ -979,6 +979,26 @@
     ? '/api/calculos'
     : SERVIDOR_API + '/api/calculos';
   var backendOk = null;                 // null = sin sondear, true/false tras sondear
+  var modoLocal = false;                // true = sin servidor: registro de PDFs en el navegador
+  var CLAVE_REGISTRO = 'registroPdfs';
+
+  function leerRegistroLocal() {
+    try {
+      var lista = JSON.parse(localStorage.getItem(CLAVE_REGISTRO) || '[]');
+      return Array.isArray(lista) ? lista : [];
+    } catch (e) { return []; }
+  }
+
+  function guardarRegistroLocal(lista) {
+    try { localStorage.setItem(CLAVE_REGISTRO, JSON.stringify(lista)); } catch (e) { /* sin almacenamiento */ }
+  }
+
+  function registrarPdfLocal(c) {
+    var lista = leerRegistroLocal();
+    var maxId = lista.reduce(function (m, x) { return Math.max(m, x.id || 0); }, 0);
+    lista.unshift({ id: maxId + 1, metodo: c.metodo, fecha: c.fecha, entradas: c.entradas, resultados: c.resultados });
+    guardarRegistroLocal(lista.slice(0, 50));
+  }
 
   function jsonDe(resp) {
     return resp.json()
@@ -1162,8 +1182,11 @@
     var cont = $('h-lista');
     cont.innerHTML = '';
     if (!calculos.length) {
-      cont.innerHTML = '<p class="hist-vacio">Aún no hay cálculos guardados. ' +
-        'Haz un cálculo y pulsa «💾 Guardar cálculo».</p>';
+      cont.innerHTML = modoLocal
+        ? '<p class="hist-vacio">Aún no has descargado ningún PDF. ' +
+          'Haz un cálculo y pulsa «📄 Descargar PDF»; quedará registrado aquí.</p>'
+        : '<p class="hist-vacio">Aún no hay cálculos guardados. ' +
+          'Haz un cálculo y pulsa «💾 Guardar cálculo».</p>';
       return;
     }
     var lista = document.createElement('div');
@@ -1232,6 +1255,11 @@
   function cargarHistorial(mensajeExito) {
     limpiarError('h-error');
     mostrarAvisos('h-aviso', []);
+    if (modoLocal) {
+      renderizarHistorial(leerRegistroLocal());
+      if (mensajeExito) mostrarAvisos('h-aviso', [mensajeExito]);
+      return;
+    }
     $('h-lista').innerHTML = '<p class="hist-vacio">Cargando historial…</p>';
 
     fetch(API_CALCULOS)
@@ -1354,13 +1382,16 @@
       .then(function () {
         numerarPaginasPdf(doc);
         doc.save('calculo-' + (c.id ? c.id + '-' : '') + c.metodo + '-' + fechaArchivo(new Date()) + '.pdf');
+        return true;
       })
       .catch(function (err) {
         mostrarError(idError, 'No se pudo generar el PDF' + (c.id ? ' del cálculo #' + c.id : '') + ': ' +
           ((err && err.message) || err));
+        return false;
       })
-      .then(function () {
+      .then(function (ok) {
         if (btn) { btn.disabled = false; btn.textContent = textoBtn; }
+        return ok;
       });
   }
 
@@ -1663,7 +1694,13 @@
     var res = esB ? estado.bairstow : estado.ridders;
     if (!res) return;
     var c = { id: null, metodo: metodo, fecha: new Date().toISOString(), entradas: res.entradas, resultados: {} };
-    descargarCalculoPdf(c, $(esB ? 'b-pdf' : 'r-pdf'), esB ? 'b-error' : 'r-error');
+    descargarCalculoPdf(c, $(esB ? 'b-pdf' : 'r-pdf'), esB ? 'b-error' : 'r-error')
+      .then(function (ok) {
+        if (ok && modoLocal) {
+          c.resultados = esB ? resultadosBairstow(res) : resultadosRidders(res);
+          registrarPdfLocal(c);
+        }
+      });
   }
   $('b-pdf').addEventListener('click', function () { descargarPdfActual('bairstow'); });
   $('r-pdf').addEventListener('click', function () { descargarPdfActual('ridders'); });
@@ -1695,6 +1732,12 @@
     if (!window.confirm('¿Borrar el cálculo #' + c.id + ' (' + c.metodo + ')? ' +
         'Esta acción no se puede deshacer.')) return;
 
+    if (modoLocal) {
+      guardarRegistroLocal(leerRegistroLocal().filter(function (x) { return x.id !== c.id; }));
+      cargarHistorial('✓ Cálculo #' + c.id + ' borrado.');
+      return;
+    }
+
     fetch(API_CALCULOS + '/' + encodeURIComponent(c.id), { method: 'DELETE' })
       .then(jsonDe)
       .then(function (r) {
@@ -1719,10 +1762,20 @@
 
   // Sin servidor (p. ej. publicada en GitHub Pages): se ocultan Guardar e
   // Historial y la calculadora funciona sola (cálculos, gráficas y PDFs).
+  // En ese modo el Historial es un registro de los PDFs descargados, guardado
+  // solo en el navegador de quien usa la página (localStorage).
   function modoSinServidor() {
     backendOk = false;
-    ['b-guardar', 'r-guardar', 'b-guardado', 'r-guardado', 'tab-btn-historial', 'panel-historial']
+    modoLocal = true;
+    ['b-guardar', 'r-guardar', 'b-guardado', 'r-guardado']
       .forEach(function (id) { if ($(id)) $(id).hidden = true; });
+    var panel = $('panel-historial');
+    panel.querySelector('h2').textContent = 'Registro de PDFs descargados';
+    panel.querySelector('.texto-suave').innerHTML =
+      'Cada vez que descargas el PDF de un cálculo queda anotado aquí (últimos 50, ' +
+      'guardados solo en este navegador). Con <b>Descargar PDF</b> lo vuelves a descargar, ' +
+      'con <b>Recargar</b> vuelves a llenar el formulario y con <b>Borrar</b> lo quitas de la lista.';
+    if (panel.classList.contains('active')) cargarHistorial();
   }
 
   window.addEventListener('load', function () {
